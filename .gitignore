@@ -1,0 +1,26 @@
+app/build/
+google-services.json
+*.keystore
+# Android / Kotlin
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+.DS_Store
+
+# Build
+/build
+/app/build
+
+# Keystore
+*.jks
+*.keystore
+
+# Firebase config
+google-services.json
+
+# Logs
+*.log
