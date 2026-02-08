@@ -1,3 +1,14 @@
 <resources>
-    <string name="app_name">neighborhood-reports</string>
+    <!--    <string name="app_name">neighborhood-reports</string>-->
+    <string name="app_name">דיווחי שכונה</string>
+    <string name="login_title">התחברות</string>
+    <string name="register_title">הרשמה</string>
+    <string name="email">אימייל</string>
+    <string name="password">סיסמה</string>
+    <string name="confirm_password">אימות סיסמה</string>
+    <string name="login_button">התחבר</string>
+    <string name="register_button">הרשם</string>
+    <string name="no_account">אין לך חשבון? הירשם</string>
+    <string name="back_to_login">חזרה להתחברות</string>
+
 </resources>

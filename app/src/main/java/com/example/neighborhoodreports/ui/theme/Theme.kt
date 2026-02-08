@@ -52,7 +52,13 @@ fun NeighborhoodreportsTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography,
         content = content
+    )
+
+    val LightColors = lightColorScheme(
+        primary = PrimaryBlue,
+        secondary = LightBlue,
+        error = ErrorRed
     )
 }
