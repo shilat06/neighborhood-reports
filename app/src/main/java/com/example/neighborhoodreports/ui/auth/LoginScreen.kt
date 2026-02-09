@@ -1,37 +1,34 @@
 package com.example.neighborhoodreports.ui.auth
 
-import androidx.compose.material3.Icon
-import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.neighborhoodreports.auth.LoginViewModel
-import com.example.neighborhoodreports.ui.theme.ErrorRed
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.neighborhoodreports.R
+import com.example.neighborhoodreports.auth.LoginViewModel
+import com.example.neighborhoodreports.data.SessionManager
 import com.example.neighborhoodreports.ui.theme.PrimaryBlue
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit
+    navController: NavController,
+    session: SessionManager,
+    viewModel: LoginViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    val state = viewModel.uiState
 
-    if (state.success) onLoginSuccess()
+    val uiState = viewModel.uiState
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -44,64 +41,96 @@ fun LoginScreen(
             tint = PrimaryBlue
         )
 
-        Text(
-            text = stringResource(R.string.login_title),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Right
-        )
-
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(40.dp))
 
         TextField(
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_email),
-                    contentDescription = null,
-                    modifier = Modifier.size(90.dp),
-                    tint = PrimaryBlue
+            value = uiState.email,
+            onValueChange = { viewModel.updateEmail(it) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right),
+            label = {
+                Text(
+                    "אימייל",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Right
                 )
             },
-            value = state.email,
-            onValueChange = viewModel::updateEmail,
-            label = { Text(stringResource(R.string.email)) },
-            modifier = Modifier.fillMaxWidth(),
-
-            )
+            trailingIcon = {
+                Icon(
+                    painterResource(R.drawable.ic_email),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        )
 
         Spacer(Modifier.height(16.dp))
 
         TextField(
-            value = state.password,
-            onValueChange = viewModel::updatePassword,
-            label = { Text(stringResource(R.string.password)) },
+            value = uiState.password,
+            onValueChange = { viewModel.updatePassword(it) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right),
+            label = {
+                Text(
+                    "סיסמה",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Right
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    painterResource(R.drawable.ic_password),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         )
 
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = { viewModel.login() },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+            onClick = { viewModel.login(session) },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.login_button))
+            Text("התחברות")
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        TextButton(onClick = onNavigateToRegister) {
-            Text(stringResource(R.string.no_account))
+        if (uiState.loading) {
+            Spacer(Modifier.height(16.dp))
+            CircularProgressIndicator()
         }
 
-        if (state.error != null) {
-            Text(
-                text = state.error!!,
-                color = ErrorRed,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Right
-            )
+        uiState.error?.let {
+            Spacer(Modifier.height(16.dp))
+            Text(text = it, color = Color.Red)
+        }
+
+        if (uiState.success) {
+            when (uiState.role) {
+                "admin" -> {
+                    navController.navigate("admin") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+
+                "user" -> {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                }
+            }
+        }
+
+
+        Spacer(Modifier.height(24.dp))
+
+        TextButton(onClick = { navController.navigate("register") }) {
+            Text("אין לך חשבון? הירשמי כאן")
         }
     }
 }
+

@@ -28,4 +28,19 @@ class UserRepository(
 
         return snapshot.toObject(AppUser::class.java)
     }
+
+    suspend fun isUserExists(uid: String): Boolean {
+        return try {
+            val doc = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .get()
+                .await()
+
+            doc.exists()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }

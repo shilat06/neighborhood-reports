@@ -22,4 +22,6 @@ class AuthRepository(
     }
 
     fun currentUserId(): String? = auth.currentUser?.uid
+
+
 }
