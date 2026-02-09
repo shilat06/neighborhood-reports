@@ -112,7 +112,7 @@ fun LoginScreen(
         if (uiState.success) {
             when (uiState.role) {
                 "admin" -> {
-                    navController.navigate("admin") {
+                    navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
                 }

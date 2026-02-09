@@ -3,12 +3,11 @@ package com.example.neighborhoodreports.auth
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.neighborhoodreports.data.AuthRepository
+import com.example.neighborhoodreports.data.repository.AuthRepository
 import com.example.neighborhoodreports.data.SessionManager
-import com.example.neighborhoodreports.data.UserRepository
+import com.example.neighborhoodreports.data.repository.UserRepository
 import kotlinx.coroutines.launch
 
 class LoginViewModel(

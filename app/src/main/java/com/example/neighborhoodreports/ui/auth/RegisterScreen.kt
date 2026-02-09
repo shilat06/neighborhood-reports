@@ -39,6 +39,23 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel = 
 
         Spacer(Modifier.height(40.dp))
 
+        TextField(
+            value = uiState.name,
+            onValueChange = { viewModel.updateName(it) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Right),
+            label = {
+                Text(
+                    "שם מלא",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Right
+                )
+            }
+        )
+
+        Spacer(Modifier.height(16.dp))
+
         // שדה אימייל
         TextField(
             value = uiState.email,
@@ -92,7 +109,7 @@ fun RegisterScreen(navController: NavController, viewModel: RegisterViewModel = 
 
         // בחירת תפקיד
         Text(
-            text = "בחר/י תפקיד:",
+            text = "בחר/י תפקיד",
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Right
         )

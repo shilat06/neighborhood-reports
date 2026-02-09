@@ -3,9 +3,9 @@ package com.example.neighborhoodreports.auth
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.neighborhoodreports.data.AuthRepository
-import com.example.neighborhoodreports.data.UserRepository
-import com.example.neighborhoodreports.data.AppUser
+import com.example.neighborhoodreports.data.repository.AuthRepository
+import com.example.neighborhoodreports.data.repository.UserRepository
+import com.example.neighborhoodreports.model.User
 import kotlinx.coroutines.launch
 
 class RegisterViewModel(
@@ -21,14 +21,20 @@ class RegisterViewModel(
             uiState = uiState.copy(loading = true, error = null)
 
             try {
+
+                if (uiState.name.isEmpty()) {
+                    uiState = uiState.copy(loading = false, error = "יש להזין שם משתמש ")
+                    return@launch
+                }
                 // שלב 1: יצירת משתמש ב-FirebaseAuth
                 val uid = authRepo.register(uiState.email, uiState.password)
 
                 // שלב 2: שמירת פרטי המשתמש ב-Firestore כולל role
-                val user = AppUser(
+                val user = User(
                     uid = uid,
                     email = uiState.email,
-                    role = uiState.role
+                    role = uiState.role,
+                    name = uiState.name
                 )
                 userRepo.createUser(user)
 
@@ -38,6 +44,10 @@ class RegisterViewModel(
                 uiState = uiState.copy(loading = false, error = e.message)
             }
         }
+    }
+
+    fun updateName(value: String) {
+        uiState = uiState.copy(name = value)
     }
 
     fun updateEmail(value: String) {
@@ -54,6 +64,7 @@ class RegisterViewModel(
 }
 
 data class RegisterUiState(
+    val name: String = "",
     val email: String = "",
     val password: String = "",
     val role: String = "user",
