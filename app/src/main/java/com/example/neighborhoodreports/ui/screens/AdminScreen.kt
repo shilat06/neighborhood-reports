@@ -8,10 +8,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.neighborhoodreports.viewModel.AdminViewModel
 
 @Composable
-fun AdminScreen(viewModel: AdminViewModel = AdminViewModel()) {
+fun AdminScreen(viewModel: AdminViewModel = viewModel()) {
 
     val categories = viewModel.categories
     val pendingReports = viewModel.pendingReports
