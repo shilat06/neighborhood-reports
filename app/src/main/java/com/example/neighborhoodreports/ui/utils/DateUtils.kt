@@ -6,6 +6,6 @@ import java.util.Locale
 
 fun formatDate(date: Date?): String {
     if (date == null) return ""
-    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale("he"))
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("he"))
     return formatter.format(date)
 }

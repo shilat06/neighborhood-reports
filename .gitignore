@@ -11,7 +11,7 @@ google-services.json
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-
+dev.sh
 .DS_Store
 
 # Build

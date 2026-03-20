@@ -1,83 +1,143 @@
 package com.example.neighborhoodreports.viewModel
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.neighborhoodreports.data.repository.CategoriesRepository
 import com.example.neighborhoodreports.data.repository.ReportsRepository
-import com.example.neighborhoodreports.model.Report
+import com.example.neighborhoodreports.data.repository.UserRepository
 import com.example.neighborhoodreports.model.Category
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import com.example.neighborhoodreports.model.Report
+import com.example.neighborhoodreports.model.User
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
+import com.google.firebase.firestore.DocumentSnapshot
+
+private const val PAGE_SIZE = 3L
+
+data class HomeUiState(
+        val reports: List<Report> = emptyList(),
+        val categories: List<Category> = emptyList(),
+        val userMap: Map<String, User> = emptyMap(),
+        val searchQuery: String = "",
+        val selectedCategoryId: String? = null,
+        val sortDescending: Boolean = true,
+        val isLoading: Boolean = false,
+        val isLoadingMore: Boolean = false,
+        val hasMore: Boolean = true
+)
+
+/**
+ * מנהל את המצב (State) של מסך הבית.
+ * מטפל בטעינת הקטגוריות והדיווחים המאושרים (עם Pagination), הפעלת סינונים מקומיים (חיפוש מקומי),
+ * והבאת פרטי המשתמשים שחיברו את הדיווחים.
+ */
 class HomeViewModel(
-    private val reportsRepo: ReportsRepository = ReportsRepository(),     // ריפוזיטורי לדיווחים
-    private val categoriesRepo: CategoriesRepository = CategoriesRepository() // ריפוזיטורי לקטגוריות
+        private val reportsRepo: ReportsRepository = ReportsRepository(),
+        private val categoriesRepo: CategoriesRepository = CategoriesRepository(),
+        private val userRepo: UserRepository = UserRepository()
 ) : ViewModel() {
 
-    private var allReports: List<Report> = emptyList() // כל הדיווחים מהשרת (לפני סינון)
+    private var loadedReports: List<Report> = emptyList()
+    private var lastReportDoc: DocumentSnapshot? = null
 
-    var reports by mutableStateOf<List<Report>>(emptyList()) // הדיווחים אחרי סינון
-        private set
-
-    var categories by mutableStateOf<List<Category>>(emptyList()) // רשימת קטגוריות
-        private set
-
-    var searchQuery by mutableStateOf("")            // טקסט חיפוש
-    var selectedCategoryId by mutableStateOf<String?>(null) // קטגוריה נבחרת
-    var sortDescending by mutableStateOf(true)       // כיוון מיון
-
-    // שני מצבי טעינה נפרדים
-    private var categoriesLoading = true
-    private var reportsLoading = true
-
-    // טעינה משולבת — true רק אם אחד מהם עדיין טוען
-    val isLoading: Boolean
-        get() = categoriesLoading || reportsLoading
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadCategories() // טעינת קטגוריות
-        loadReports()    // טעינת דיווחים
+        loadCategories()
+        loadMoreReports()
     }
 
     private fun loadCategories() {
         categoriesRepo.getCategories { list ->
-            categories = list
-            categoriesLoading = false // סיום טעינת קטגוריות
+            _uiState.update { it.copy(categories = list) }
         }
     }
 
-    private fun loadReports() {
-        reportsRepo.getApprovedReports { list ->
-            allReports = list
-            applyFilters()            // הפעלת סינון על הנתונים
-            reportsLoading = false    // סיום טעינת דיווחים
+    fun loadMoreReports() {
+        val state = _uiState.value
+        if (state.isLoading || state.isLoadingMore || !state.hasMore) return
+
+        val isFirstPage = lastReportDoc == null
+        _uiState.update {
+            if (isFirstPage) it.copy(isLoading = true) else it.copy(isLoadingMore = true)
         }
-    }
 
-    // הפעלת כל הפילטרים: חיפוש, קטגוריה, מיון
-    fun applyFilters() {
-        var filtered = allReports
+        reportsRepo.getApprovedReportsPaged(
+                pageSize = PAGE_SIZE,
+                categoryId = state.selectedCategoryId,
+                sortDescending = state.sortDescending,
+                lastDoc = lastReportDoc
+        ) { newItems, cursor ->
+            lastReportDoc = cursor
+            loadedReports = if (isFirstPage) newItems else loadedReports + newItems
 
-        // סינון לפי טקסט
-        if (searchQuery.isNotBlank()) {
-            filtered = filtered.filter {
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.description.contains(searchQuery, ignoreCase = true)
+            fetchAuthors(newItems.map { it.userId }.distinct())
+
+            _uiState.update {
+                it.copy(
+                        isLoading = false,
+                        isLoadingMore = false,
+                        hasMore = newItems.size.toLong() == PAGE_SIZE
+                )
             }
+            applyLocalFilters()
+        }
+    }
+
+    fun refreshReports() {
+        lastReportDoc = null
+        loadedReports = emptyList()
+        _uiState.update { it.copy(reports = emptyList(), hasMore = true) }
+        loadMoreReports()
+    }
+
+    private fun fetchAuthors(userIds: List<String>) {
+        if (userIds.isEmpty()) return
+        viewModelScope.launch {
+            val map = _uiState.value.userMap.toMutableMap()
+            userIds.forEach { uid ->
+                if (uid.isNotBlank() && !map.containsKey(uid)) {
+                    val user = userRepo.getUser(uid)
+                    if (user != null) map[uid] = user
+                }
+            }
+            _uiState.update { it.copy(userMap = map) }
+        }
+    }
+
+    fun updateSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+        applyLocalFilters() // Search is done locally on loaded pages
+    }
+
+    fun updateSelectedCategory(categoryId: String?) {
+        if (_uiState.value.selectedCategoryId == categoryId) return
+        _uiState.update { it.copy(selectedCategoryId = categoryId) }
+        refreshReports() // Requires new server fetch
+    }
+
+    fun toggleSort() {
+        _uiState.update { it.copy(sortDescending = !it.sortDescending) }
+        refreshReports() // Requires new server fetch
+    }
+
+    private fun applyLocalFilters() {
+        val state = _uiState.value
+        var filtered = loadedReports
+
+        if (state.searchQuery.isNotBlank()) {
+            filtered =
+                    filtered.filter {
+                        it.title.contains(state.searchQuery, ignoreCase = true) ||
+                                it.description.contains(state.searchQuery, ignoreCase = true)
+                    }
         }
 
-        // סינון לפי קטגוריה
-        selectedCategoryId?.let { catId ->
-            filtered = filtered.filter { it.categoryId == catId }
-        }
-
-        // מיון לפי תאריך
-        filtered = if (sortDescending) {
-            filtered.sortedByDescending { it.createdAt }
-        } else {
-            filtered.sortedBy { it.createdAt }
-        }
-
-        reports = filtered // עדכון הרשימה המוצגת
+        _uiState.update { it.copy(reports = filtered) }
     }
 }

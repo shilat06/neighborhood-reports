@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.neighborhoodreports" />
-                  <option name="mobileSdkAppId" value="1:330307271423:android:a69157c22f310a00662aca" />
-                  <option name="projectId" value="neighborhoodreports-dc188" />
-                  <option name="projectNumber" value="330307271423" />
+                  <option name="appId" value="com.shilathovav.neighborhoodon" />
+                  <option name="mobileSdkAppId" value="1:642909227690:android:d09850c27532e4a3981ed3" />
+                  <option name="projectId" value="neighborhoodon" />
+                  <option name="projectNumber" value="642909227690" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

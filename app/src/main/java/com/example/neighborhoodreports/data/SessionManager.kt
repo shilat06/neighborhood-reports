@@ -10,15 +10,19 @@ class SessionManager(context: Context) {
         prefs.edit().putString("uid", uid).apply()
     }
 
-    fun getUser(): String? {
-        return prefs.getString("uid", null)
+    fun saveRole(role: String) {
+        prefs.edit().putString("role", role).apply()
     }
+
+    fun getUser(): String? = prefs.getString("uid", null)
+
+    fun getRole(): String? = prefs.getString("role", null)
 
     fun clear() {
         prefs.edit().clear().apply()
     }
 
     fun debugPrint() {
-        println("Saved UID = ${prefs.getString("uid", null)}")    }
-
+        println("Saved UID = ${prefs.getString("uid", null)}")
+    }
 }
